@@ -441,7 +441,8 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 						}
 					}
 				}
-								 
+				
+				//NOTE: This is stupid, perhaps use a stack instead to keep track of option states  
 				if(Input->Keyboard.Keys[KEY_ESC].EndedDown)
 				{
 					UpdateGameState(Game, OptionMenu->OptionEnterState);
