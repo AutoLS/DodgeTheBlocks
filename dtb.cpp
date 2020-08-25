@@ -32,9 +32,6 @@ void InitGameUI(game_core* Game, render* Graphics)
 	game_skin* Skin = &Game->Skin;
 	
 	//NOTE: Gameover state
-	UI->LevelUPMsg = CreateMessageBox(UI_MSGBOX_OK, Renderer, "Info",
-									 "You leveled up!",
-									 WinDim*0.5f, V2(500, 300));
 	UI->GameOverText = LoadRenderText(Renderer->RenderFonts[DEFAULT_FONT_LARGE], 
 									   "Game over!", 
 									   Renderer->RenderObjects[R_OBJECT_RECT]);
@@ -442,7 +439,7 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 					}
 				}
 				
-				//NOTE: This is stupid, perhaps use a stack instead to keep track of option states  
+				//TODO: This is stupid. Maybe use a stack instead to keep track of option states
 				if(Input->Keyboard.Keys[KEY_ESC].EndedDown)
 				{
 					UpdateGameState(Game, OptionMenu->OptionEnterState);
@@ -661,9 +658,10 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 						
 						Game->Profile.Highscore = ModeClassic->GameInfo.Score;
 					}
-					UpdateGameState(Game, STATE_GAMEOVER);
 					Mix_HaltMusic();
 					Mix_RewindMusic();
+					
+					//TODO: Perhaps make a function to update the stats(?)
 					Game->Profile.PlayTimeInHours += 
 					ModeClassic->Timers[MC_GAME_TIMER].Time / 3600;
 					Game->Profile.nBlocksDodged += PlayerInfo->nBlocksDodged;
@@ -674,6 +672,7 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 					if(Game->Profile.TotalScore >= 
 					   GetScoreRequitementForLeveling(Game->Profile.Level+1))
 					{
+						//NOTE: This is a really cheesy way of calculating total level gained
 						while(Game->Profile.TotalScore >= 
 							  GetScoreRequitementForLeveling(
 							  Game->Profile.Level+1))
@@ -689,8 +688,11 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 					}
 					if(Game->PlayerData.LevelUP)
 					{
-						PromptMessageBox(&UI->LevelUPMsg);
-						Game->PlayerData.LevelUP = false;
+						UpdateGameState(Game, STATE_LEVELUP);
+					}
+					else
+					{
+						UpdateGameState(Game, STATE_GAMEOVER);
 					}
 					SaveProfile(&Game->Profile);
 				}
@@ -742,6 +744,43 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 				}
 			} break;
 			
+			case STATE_LEVELUP:
+			{
+				if(Game->PlayerData.LevelUP)
+				{
+					//NOTE: Initializing level up text
+					CleanUpRenderText(&UI->LevelUPText);
+					
+					UI->LevelUPText = 
+					LoadRenderText(Renderer->RenderFonts[FONT_04B_LARGE], 
+								   "YOU LEVELED UP!",
+								   Renderer->RenderObjects[R_OBJECT_RECT]);
+					SetRenderTextPos(Graphics, &UI->LevelUPText, V2(0, -100));
+								   
+					CleanUpRenderText(&UI->SkillPointsGainedText);
+					
+					char SkillPtsBuffer[100];
+					stbsp_sprintf(SkillPtsBuffer, 
+								 "You gained %d skill points.", 
+								 Game->Profile.Level);
+					
+					UI->SkillPointsGainedText = 
+					LoadRenderText(Renderer->RenderFonts[DEFAULT_FONT_MEDIUM], 
+								   SkillPtsBuffer,
+								   Renderer->RenderObjects[R_OBJECT_RECT]);
+					SetRenderTextPos(Graphics, &UI->SkillPointsGainedText);
+					
+					Game->PlayerData.LevelUP = false;
+				}
+				
+				if(Input->Keyboard.Keys[KEY_SPACE].EndedDown)
+				{
+					UpdateGameState(Game, STATE_GAMEOVER);
+					Input->Keyboard.Keys[KEY_SPACE].EndedDown = false;
+				}
+				
+			} break;
+			
 			case STATE_GAMEOVER:
 			{
 				if(!Mix_PlayingMusic())
@@ -750,71 +789,66 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 				}
 				
 				SDL_ShowCursor(SDL_ENABLE);
-				switch(Game->LastState)
+				
+				game_mode_classic* ModeClassic = &Game->ModeClassic;
+				
+				HandleScrollBar(&ModeClassic->ScoreBoardScrollBar, 
+							Input, Graphics);
+				if(Input->Keyboard.Keys[KEY_SPACE].EndedDown && 
+				   ModeClassic->SBAnimation.State == 
+				   SB_ANI_STATE_COMPLETE)
 				{
-					case STATE_MODE_CLASSIC:
+					for(int i = 0; i < SB_ANI_STATE_COMPLETE; ++i)
 					{
-						game_mode_classic* ModeClassic = &Game->ModeClassic;
-						ProcessMessageBox(&UI->LevelUPMsg, Input);
-						
-						if(!UI->LevelUPMsg.Active)
-						{
-							HandleScrollBar(&ModeClassic->ScoreBoardScrollBar, 
-										Input, Graphics);
-							if(Input->Keyboard.Keys[KEY_SPACE].EndedDown && 
-							   ModeClassic->SBAnimation.State == 
-							   SB_ANI_STATE_COMPLETE)
-							{
-								for(int i = 0; i < SB_ANI_STATE_COMPLETE; ++i)
-								{
-									glDeleteTextures(1, &ModeClassic->SBAnimation.
-														Text[i].Texture);
-								}
-								
-								InitModeClassic(ModeClassic, 
-												&Game->Profile,
-												&Game->Renderer,
-												Game->Skin.Textures,
-												WinDim,
-												&EntityPool, 
-												ModeClassic->Difficulty);
-								UpdateGameState(Game, Game->LastState);
-								
-								Mix_HaltMusic();
-								Mix_RewindMusic();
-								Mix_PlayMusic(Game->Audio.Music[MUS_BACKGROUND], -1);
-							}
-							
-							if(Input->Keyboard.Keys[KEY_SPACE].EndedDown)
-							{
-								if(ModeClassic->SBAnimation.State != 
-								   SB_ANI_STATE_COMPLETE)
-								{
-									ModeClassic->SBAnimation.State =
-									SB_ANI_STATE_COMPLETE;
-								}
-							}
-							
-							if(Input->Keyboard.Keys[KEY_ESC].EndedDown)
-							{
-								for(int i = 0; i < SB_ANI_STATE_COMPLETE; ++i)
-								{
-									glDeleteTextures(1, 
-									&ModeClassic->SBAnimation.Text[i].Texture);
-								}
-								UpdateProfileStatus(&Game->ProfileStatus, 
-													&Game->Profile,
-													Renderer,
-													Graphics);
-								UpdateGameState(Game, STATE_MAIN_LOBBY);
-								
-								Mix_HaltMusic();
-								Mix_RewindMusic();
-								Mix_PlayMusic(Game->Audio.Music[MUS_BACKGROUND], -1);
-							}
-						}
-						
-					} break;
+						glDeleteTextures(1, &ModeClassic->SBAnimation.
+											Text[i].Texture);
+					}
+					
+					InitModeClassic(ModeClassic, 
+									&Game->Profile,
+									&Game->Renderer,
+									Game->Skin.Textures,
+									WinDim,
+									&EntityPool, 
+									ModeClassic->Difficulty);
+									
+					UpdateGameState(Game, STATE_MODE_CLASSIC);
+					
+					Mix_HaltMusic();
+					Mix_RewindMusic();
+					Mix_PlayMusic(Game->Audio.Music[MUS_BACKGROUND], -1);
+				}
+				
+				if(Input->Keyboard.Keys[KEY_SPACE].EndedDown)
+				{
+					if(ModeClassic->SBAnimation.State != 
+					   SB_ANI_STATE_COMPLETE)
+					{
+						ModeClassic->SBAnimation.State =
+						SB_ANI_STATE_COMPLETE;
+					}
+				}
+				
+				if(Input->Keyboard.Keys[KEY_ESC].EndedDown)
+				{
+					for(int i = 0; i < SB_ANI_STATE_COMPLETE; ++i)
+					{
+						glDeleteTextures(1, 
+						&ModeClassic->SBAnimation.Text[i].Texture);
+					}
+					
+					//NOTE: This only updates the interface 
+					//      it DOES NOT affect the actual stats
+					UpdateProfileStatus(&Game->ProfileStatus, 
+										&Game->Profile,
+										Renderer,
+										Graphics);
+										
+					UpdateGameState(Game, STATE_MAIN_LOBBY);
+					
+					Mix_HaltMusic();
+					Mix_RewindMusic();
+					Mix_PlayMusic(Game->Audio.Music[MUS_BACKGROUND], -1);
 				}
 			} break;
 			
@@ -1035,6 +1069,25 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 							 Renderer);
 			} break;
 			
+			case STATE_LEVELUP:
+			{
+				glViewport(0, 0, Graphics->Dim.x, Graphics->Dim.y);
+				SetScreenSpaceProjection(Renderer->Shaders[RENDERER_TEXTURED],
+										 WinDim);
+				
+				RenderText(Renderer->Shaders[RENDERER_TEXTURED],
+						   &UI->LevelUPText, 
+						   Color(), false);
+						   
+				RenderText(Renderer->Shaders[RENDERER_TEXTURED],
+						   &UI->SkillPointsGainedText, 
+						   Color(), false);
+						   
+				RenderTextEffectBlinking(Renderer->Shaders[RENDERER_TEXTURED],
+										 &UI->ContinueText,
+										 GlobalTimer.Time);
+			} break;
+			
 			case STATE_GAMEOVER:
 			{
 				game_mode_classic* ModeClassic = &Game->ModeClassic;
@@ -1057,16 +1110,14 @@ void MainGame(game_core* Game, game_input* Input, render* Graphics)
 						   &UI->GameOverText, 
 						   Color(), false);
 				
-				real32 Alpha = (30 + abs(sinf(GlobalTimer.Time)) * 225) / 255;
-				RenderText(Renderer->Shaders[RENDERER_TEXTURED],
-						   &UI->ContinueText, 
-						   Color(255, 255, 255, Alpha), false);
+				RenderTextEffectBlinking(Renderer->Shaders[RENDERER_TEXTURED],
+										 &UI->ContinueText,
+										 GlobalTimer.Time);
 						   
 				RenderScrollBar(&ModeClassic->ScoreBoardScrollBar, 
 							    WinDim,
 								Renderer->Shaders[RENDERER_PRIMITIVES],
 								&Renderer->RenderObjects[R_OBJECT_RECT]);
-				RenderMessageBox(&UI->LevelUPMsg, Renderer);
 			} break;
 		}
 		

@@ -224,6 +224,14 @@ void UpdateRenderText(render_text* RenderText, TTF_Font* Font, char* Text)
 	TTF_SizeText(Font, Text, &RenderText->Dim.x, &RenderText->Dim.y);
 }
 
+void CleanUpRenderText(render_text* RenderText)
+{
+	if(RenderText->Texture)
+	{
+		glDeleteTextures(1, &RenderText->Texture);
+	}
+}
+
 void SetRenderTextPos(render* Graphics, render_text* Text, v2 Offset = V2(), 
 					  render_text_position Position = TEXT_POSITION_CENTERED)
 {
@@ -388,6 +396,12 @@ void RenderText(uint32 Renderer, render_text* Text,
 	{
 		glDeleteTextures(1, &Text->Texture);
 	}
+}
+
+void RenderTextEffectBlinking(uint32 Renderer, render_text* Text, real32 t)
+{
+	real32 Alpha = (30 + abs(sinf(t)) * 225) / 255;
+	RenderText(Renderer, Text, Color(255, 255, 255, Alpha), false);
 }
 
 void LoadAndRenderText(TTF_Font* Font, char* Text, v2 ViewDim,

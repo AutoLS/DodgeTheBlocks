@@ -100,7 +100,8 @@ void UpdateProfileStatus(player_profile_status* ProfileStatus, player_profile* P
 	char Buffer[255] = {};
 	stbsp_sprintf(Buffer, "Profile: %s", Profile->Name);
 	ProfileStatus->ProfileName = LoadRenderText(FontM, Buffer, Object);
-	SetRenderTextPos(&ProfileStatus->ProfileName, &ProfileStatus->Rect, V2(10, 10), 
+	SetRenderTextPos(&ProfileStatus->ProfileName, 
+					 &ProfileStatus->Rect, V2(10, 10), 
 					 TEXT_POSITION_TOP_LEFT);
 	stbsp_sprintf(Buffer, "Lv: %d", Profile->Level);
 	ProfileStatus->Level = LoadRenderText(FontM, Buffer, Object);
@@ -109,7 +110,8 @@ void UpdateProfileStatus(player_profile_status* ProfileStatus, player_profile* P
 					 
 	real32 Requirement = GetScoreRequitementForLeveling(Profile->Level+1) - 
 						 GetScoreRequitementForLeveling(Profile->Level);
-	real32 Progress = Profile->TotalScore - GetScoreRequitementForLeveling(Profile->Level);
+	real32 Progress = Profile->TotalScore - 
+					  GetScoreRequitementForLeveling(Profile->Level);
 	real32 ProgressPercentage = Progress / Requirement;
 	
 	v2 ProgressDim = V2(380 * ProgressPercentage, 10);
@@ -362,7 +364,7 @@ InitProfileSelectionMenu(player_profile* Profile,
 		
 		render_text ButtonText = 
 		LoadRenderText(FontM, 
-					  (char*)Result.List.Data[ButtonIndex].c_str(), 
+					  (char*)Result.List.Data[ButtonIndex], 
 					  RenderObject);
 		SetRenderTextPos(&ButtonText, &Rect, V2(), TEXT_POSITION_CENTERED);
 		
@@ -480,7 +482,7 @@ void UpdateProfileSelectionMenu(profile_selection* ProfileSelection,
 				   UI_BUTTON_STATE_CLICK_L)
 				{
 					char* ProfileName = 
-					(char*)ProfileSelection->List.Data[ButtonIndex].c_str();
+					(char*)ProfileSelection->List.Data[ButtonIndex];
 					LoadProfile(Profile, ProfileName);
 					
 					for(int i = PROFILE_SELECTION_PROFILE;
@@ -537,7 +539,7 @@ void UpdateProfileSelectionMenu(profile_selection* ProfileSelection,
 				else
 				{
 					LoadProfile(Profile, 
-								(char*)ProfileSelection->List.Data[0].c_str());
+								(char*)ProfileSelection->List.Data[0]);
 				}
 				FreeProfileSelectionMenu(ProfileSelection);
 				*ProfileSelection = 

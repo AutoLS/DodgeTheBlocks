@@ -400,7 +400,7 @@ game_option InitOptionMenu(option_config Config,
 		{
 			render_text ButtonText = 
 			LoadRenderText(Renderer->RenderFonts[DEFAULT_FONT_MEDIUM], 
-						   (char*)Skin->List.Data[i].c_str(), 
+						   (char*)Skin->List.Data[i], 
 						   Renderer->RenderObjects[R_OBJECT_RECT]);
 			SetRenderTextPos(&ButtonText, ViewDim, 
 							 V2(10, i * ItemDim.y), TEXT_POSITION_TOP_LEFT);
@@ -600,7 +600,7 @@ void UpdateOptionMenu(game_option* OptionMenu,
 			   UI_BUTTON_STATE_CLICK_L && i != Skin->List.Length)
 			{
 				Skin->SelectedSkin = 
-				(char*)Skin->List.Data[i].c_str();
+				(char*)Skin->List.Data[i];
 				
 				OptionMenu->SkinSelection.ExpandText = 
 				LoadRenderText(Renderer->RenderFonts[DEFAULT_FONT_MEDIUM],

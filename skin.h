@@ -43,7 +43,7 @@ game_skin LoadSkin(char* SkinName, game_sound* Audio)
 	bool SkinExist = false;
 	for(int i = 0; i < Skin.List.Length; ++i)
 	{
-		if(strcmp(Skin.List.Data[i].c_str(), SkinName) == 0)
+		if(strcmp(Skin.List.Data[i], SkinName) == 0)
 		{
 			SkinExist = true;
 			break;
@@ -51,7 +51,7 @@ game_skin LoadSkin(char* SkinName, game_sound* Audio)
 	}
 	if(!SkinExist)
 	{
-		SkinName = (char*)Skin.List.Data[0].c_str();
+		SkinName = (char*)Skin.List.Data[0];
 	}
 
 	OpenSkin(&Skin, 0, SkinName, Audio);
@@ -173,7 +173,7 @@ void OpenSkin(game_skin* Skin, int SkinIndex, char* SkinName, game_sound* Audio)
 	if(strlen(SkinName) > 0)
 		Skin->SelectedSkin = SkinName;
 	else
-		Skin->SelectedSkin = (char*)Skin->List.Data[SkinIndex].c_str();
+		Skin->SelectedSkin = (char*)Skin->List.Data[SkinIndex];
 	
 	Assert(Skin->SelectedSkin);
 	LoadSkinElements(Skin, Audio, false);
@@ -181,7 +181,7 @@ void OpenSkin(game_skin* Skin, int SkinIndex, char* SkinName, game_sound* Audio)
 
 void UpdateSkin(game_skin* Skin, int SkinIndex, game_sound* Audio)
 {
-	Skin->SelectedSkin = (char*)Skin->List.Data[SkinIndex].c_str();
+	Skin->SelectedSkin = (char*)Skin->List.Data[SkinIndex];
 	LoadSkinElements(Skin, Audio, true);
 }
 

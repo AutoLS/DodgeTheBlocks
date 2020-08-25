@@ -22,6 +22,7 @@ enum game_state
 	STATE_MC_DIFF_SELECT,
 	STATE_MODE_CLASSIC,
 	STATE_GAMEOVER,
+	STATE_LEVELUP,
 	STATE_PAUSED,
 	STATE_DEBUG,
 };
@@ -155,7 +156,8 @@ struct game_ui
 	render_text HelpText[HELP_TEXT_MAX];
 	button HelpBackButton;
 	
-	message_box LevelUPMsg;
+	render_text LevelUPText;
+	render_text SkillPointsGainedText;
 
 	render_text GameOverText;
 	render_text ContinueText;

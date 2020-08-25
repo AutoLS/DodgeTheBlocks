@@ -217,7 +217,7 @@ bool TestGJK(polygon* ShapeA, polygon* ShapeB)
 			b = Simplex[0];
 			ab = b - a;
 			d = TripleProduct(ab, ao, ab);
-			if(Length(d) * Length(d) == 0)
+			if(Length(d) == 0)
 			{
 				d = Perp_v2(ab);
 			}
